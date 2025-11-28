@@ -43,7 +43,8 @@ export interface PackAnalysis {
 export interface SuggestedItem {
   name: string;
   category: Category;
-  weight: number;
+  weight: number; // Approximate numeric weight for adding to pack (average)
+  weightDisplay: string; // Text description like "~450g" or "400-500g"
   reason: string;
 }
 

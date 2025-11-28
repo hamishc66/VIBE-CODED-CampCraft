@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { GearLibrary } from './components/GearLibrary';
 import { PackSummary } from './components/PackSummary';
@@ -13,6 +14,9 @@ const App: React.FC = () => {
   const [packItems, setPackItems] = useState<GearItem[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [aiStatus, setAiStatus] = useState<AIStatus>('idle');
+  
+  // Snapshot State
+  const [snapshot, setSnapshot] = useState<{weight: number, date: number} | null>(null);
   
   // Analysis State
   const [packAnalysis, setPackAnalysis] = useState<PackAnalysis | null>(null);
@@ -57,6 +61,19 @@ const App: React.FC = () => {
   const clearPack = () => {
       setPackItems([]);
       setPackAnalysis(null);
+  };
+
+  const handleStripToEssentials = () => {
+      if (!packAnalysis?.essentialItemIds) return;
+      const essentialIds = packAnalysis.essentialItemIds;
+      // Keep only items that are in the essential list
+      setPackItems(prev => prev.filter(item => essentialIds.includes(item.id)));
+  };
+
+  const handleTakeSnapshot = () => {
+      const totalWeight = packItems.reduce((acc, item) => acc + item.weight, 0);
+      setSnapshot({ weight: totalWeight, date: Date.now() });
+      addMessage('model', `**Snapshot Saved!**\nCurrent weight (${(totalWeight/1000).toFixed(2)} kg) is locked for comparison.`);
   };
 
   const applyPreset = (preset: Preset) => {
@@ -133,7 +150,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-earth-50 text-earth-900 pb-12">
+    <div className="min-h-screen bg-earth-50 text-earth-900 pb-12 flex flex-col">
       {/* Header */}
       <header className="bg-earth-800 text-white shadow-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -147,7 +164,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 w-full">
         
         {/* Left Column: Context & Inputs */}
         <div className="lg:col-span-4 space-y-6">
@@ -172,6 +189,9 @@ const App: React.FC = () => {
                 onClear={clearPack}
                 onQuickFeedback={handleQuickFeedback}
                 onDeepReview={handleDeepReview}
+                onStripToEssentials={handleStripToEssentials}
+                onTakeSnapshot={handleTakeSnapshot}
+                snapshot={snapshot}
                 isThinking={aiStatus !== 'idle'}
                 analysis={packAnalysis}
              />
@@ -185,6 +205,17 @@ const App: React.FC = () => {
         </div>
 
       </main>
+
+      <footer className="mt-8 border-t border-earth-200 bg-white py-6">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+            <h3 className="text-xs font-bold text-earth-500 uppercase tracking-widest mb-2">Safety Disclaimer</h3>
+            <p className="text-[11px] text-earth-400 leading-relaxed">
+                CampCraft is a planning and education simulation tool only. AI recommendations and weight estimates are approximate and may not reflect real-world conditions. 
+                Always verify gear specifications with manufacturers and check local regulations, weather reports, and trail conditions before hiking. 
+                This app does not replace professional medical advice, survival training, or common sense. You are responsible for your own safety.
+            </p>
+        </div>
+      </footer>
     </div>
   );
 };
